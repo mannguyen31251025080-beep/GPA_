@@ -4,9 +4,6 @@ import numpy as np
 import plotly.express as px
 import re
 from sklearn.ensemble import RandomForestClassifier
-
-# ==========================================
-# 1. CẤU HÌNH TRANG VÀ CUSTOM CSS CHUẨN UEH
 # ==========================================
 st.set_page_config(
     page_title="UEH GPA Predictor & Bias Analyzer",
@@ -15,7 +12,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Thêm hiệu ứng giao diện Dashboard sang xịn mịn
 st.markdown("""
     <style>
     .main {
@@ -69,7 +65,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Header chào mừng tích hợp Logo UEH chính thức
 st.markdown("""
     <div class="ueh-header">
         <div>
@@ -83,12 +78,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. ĐỌC VÀ CHUYỂN ĐỔI DỮ LIỆU TỰ ĐỘNG DÒ FILE
-# ==========================================
 @st.cache_data
 def load_and_preprocess_data():
     import os
-    # Tự động quét tìm bất kỳ file nào có đuôi .csv trong thư mục hiện tại
     csv_files = "gpa.csv"
     
     if not csv_files:
@@ -102,21 +94,18 @@ def load_and_preprocess_data():
         st.error(f"Lỗi khi đọc file {"gpa.csv"}: {e}")
         return None, None, None
 
-    # Đồng bộ hóa tên cột ngắn để xử lý code nhanh
     df.columns = [
         'Timestamp', 'Nam_Hoc', 'Thoi_Gian_Tu_Hoc', 'So_Mon_Hoc', 
         'Di_Lam_Them', 'Tham_Gia_CLB', 'Ty_Le_Len_Lop', 'Hinh_Thuc_Hoc', 
         'Thoi_Gian_Ngu', 'Thoi_Gian_MXH', 'GPA'
     ]
 
-    # Làm sạch cột Số Môn Học (Xử lý trường hợp "3 môn" thành số 3)
     def extract_number(val):
         nums = re.findall(r'\d+', str(val))
         return int(nums[0]) if nums else 6
 
     df['So_Mon_Hoc'] = df['So_Mon_Hoc'].apply(extract_number)
 
-    # Khởi tạo DataFrame đã mã hóa cho mô hình Machine Learning
     df_encoded = pd.DataFrame()
     df_encoded['So_Mon_Hoc'] = df['So_Mon_Hoc']
 
@@ -131,23 +120,19 @@ def load_and_preprocess_data():
 
     return df, df_encoded, maps
 
-# Chạy hàm load dữ liệu
 df_raw, df_clean, maps = load_and_preprocess_data()
 
 if df_raw is not None:
-    # Huấn luyện mô hình Random Forest Classifier để lấy Feature Importance
     features = ['Nam_Hoc', 'Thoi_Gian_Tu_Hoc', 'Di_Lam_Them', 'Tham_Gia_CLB', 'Ty_Le_Len_Lop', 'Hinh_Thuc_Hoc', 'Thoi_Gian_Ngu', 'Thoi_Gian_MXH', 'So_Mon_Hoc']
     X = df_clean[features]
     y = df_clean['GPA']
     
     model = RandomForestClassifier(random_state=42, n_estimators=100)
     model.fit(X, y)
-    
-    # Trích xuất độ quan trọng của các thuộc tính
+
     importances = model.feature_importances_
     indices = np.argsort(importances)[::-1]
-    
-    # Định dạng lại tên hiển thị cho biểu đồ trực quan hơn
+
     friendly_names = {
         'Nam_Hoc': 'Năm học hiện tại',
         'Thoi_Gian_Tu_Hoc': 'Thời gian tự học / tuần',
@@ -164,13 +149,10 @@ if df_raw is not None:
     importances_ranked = [importances[i] for i in indices]
 
     # ==========================================
-    # 3. SIDEBAR - FORM NHẬP INPUT CHỌN LỌC
-    # ==========================================
     st.sidebar.image("https://ueh.edu.vn/images/logo.png", width=130)
     st.sidebar.markdown("<h2 style='color:#004B87; font-size:22px; font-weight:700;'>🎯 THÔNG TIN SINH VIÊN</h2>", unsafe_allow_html=True)
     st.sidebar.write("Hãy tự khai báo các chỉ số hành vi học tập của bạn dưới đây:")
     
-    # Tạo các selectbox động lấy trực tiếp danh sách từ dữ liệu thật
     input_nam_hoc = st.sidebar.selectbox("Bạn đang là sinh viên năm mấy?", list(maps['Nam_Hoc'].keys()))
     input_tu_hoc = st.sidebar.selectbox("Thời gian tự học ngoài giờ / tuần?", list(maps['Thoi_Gian_Tu_Hoc'].keys()))
     input_so_mon = st.sidebar.slider("Số môn học đăng ký kỳ này?", int(df_raw['So_Mon_Hoc'].min()), int(df_raw['So_Mon_Hoc'].max()), int(df_raw['So_Mon_Hoc'].median()))
@@ -181,16 +163,13 @@ if df_raw is not None:
     input_ngu = st.sidebar.selectbox("Thời gian ngủ trung bình mỗi ngày?", list(maps['Thoi_Gian_Ngu'].keys()))
     input_mxh = st.sidebar.selectbox("Thời gian lướt Mạng xã hội / ngày?", list(maps['Thoi_Gian_MXH'].keys()))
 
-    # ==========================================
-    # 4. GIAO DIỆN CHÍNH TRỰC QUAN (TABS)
-    # ==========================================
+    # =========================================
     tab1, tab2, tab3 = st.tabs(["🔮 Dự Đoán Điểm Số GPA", "📊 Feature Importance & Dữ Liệu gốc", "⚠️ Phân Tích Định Kiến (Bias Analysis)"])
     
     with tab1:
         st.markdown("### 🔮 Dự báo Xếp loại GPA bằng Trí tuệ nhân tạo")
         st.write("Dựa vào thông tin bạn tự khai báo ở thanh Sidebar bên trái, mô hình học máy Random Forest dự đoán mức điểm kì này của bạn là:")
-        
-        # Chuyển đổi các lựa chọn chữ của người dùng thành Vector số để đưa vào mô hình AI
+       
         user_vector = [
             maps['Nam_Hoc'][input_nam_hoc],
             maps['Thoi_Gian_Tu_Hoc'][input_tu_hoc],
@@ -203,13 +182,10 @@ if df_raw is not None:
             input_so_mon
         ]
         
-        # Dự đoán kết quả mã số (bọc DataFrame để tránh lỗi Valid Feature Names của Sklearn)
         user_df = pd.DataFrame([user_vector], columns=features)
         pred_num = model.predict(user_df)[0]
-        # Tra ngược từ mã số ra nhãn chữ GPA gốc (Ví dụ: 3.0 - 3.5)
         predicted_gpa_text = [k for k, v in maps['GPA'].items() if v == pred_num][0]
         
-        # Thiết kế khối hiển thị kết quả cực "chất"
         col_m1, col_m2 = st.columns(2)
         with col_m1:
             st.markdown(f"""
@@ -241,7 +217,6 @@ if df_raw is not None:
         st.markdown("### 📊 Độ Quan Trọng Của Các Yếu Tố (Feature Importance Analysis)")
         st.write("Mô hình AI bóc tách và xếp hạng xem hành vi thói quen nào thực sự đang 'thao túng' và đóng vai trò quyết định nhiều nhất đến bảng điểm GPA của sinh viên:")
         
-        # Vẽ biểu đồ thanh ngang bằng Plotly cực chất
         fig_importance = px.bar(
             x=importances_ranked[::-1], 
             y=features_ranked[::-1], 
@@ -278,12 +253,10 @@ if df_raw is not None:
         </div>
         """, unsafe_allow_html=True)
         
-        # Biểu đồ minh chứng trực quan hóa Bias
         st.markdown("#### 📊 Trực quan minh chứng sự lệch (Skewness) dữ liệu tự khai báo")
         
         col_img1, col_img2 = st.columns(2)
         with col_img1:
-            # Đã cấu hình cột chuẩn Thoi_Gian_MXH
             fig_mxh = px.histogram(
                 df_raw, 
                 x='Thoi_Gian_MXH', 
@@ -294,7 +267,6 @@ if df_raw is not None:
             st.plotly_chart(fig_mxh, width='stretch')
             
         with col_img2:
-            # Đã cấu hình cột chuẩn GPA
             fig_gpa = px.histogram(
                 df_raw, 
                 x='GPA', 
