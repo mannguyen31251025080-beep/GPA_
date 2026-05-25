@@ -89,19 +89,17 @@ st.markdown("""
 def load_and_preprocess_data():
     import os
     # Tự động quét tìm bất kỳ file nào có đuôi .csv trong thư mục hiện tại
-    csv_files = [f for f in os.listdir('.') if f.endswith('.csv')]
+    csv_files = "gpa.csv"
     
     if not csv_files:
         st.error("❌ Không tìm thấy bất kỳ file .csv nào trong thư mục này! Bạn kiểm tra lại xem đã bỏ file khảo sát vào đúng thư mục chưa nha.")
         return None, None, None
-    
-    # Lấy file CSV đầu tiên tìm thấy được
-    filename = csv_files[0]
+
     
     try:
-        df = pd.read_csv(filename)
+        df = pd.read_csv("gpa.csv")
     except Exception as e:
-        st.error(f"Lỗi khi đọc file {filename}: {e}")
+        st.error(f"Lỗi khi đọc file {"gpa.csv"}: {e}")
         return None, None, None
 
     # Đồng bộ hóa tên cột ngắn để xử lý code nhanh
