@@ -1,7 +1,7 @@
 streamlit 
 pandas 
 numpy 
-plotly.express 
+plotly
 re
 sklearn.ensemble 
 RandomForestClassifier
