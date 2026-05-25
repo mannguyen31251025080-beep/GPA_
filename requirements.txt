@@ -3,5 +3,5 @@ pandas
 numpy 
 plotly.express
 re
-sklearn.ensemble 
+scikit-learn
 RandomForestClassifier
